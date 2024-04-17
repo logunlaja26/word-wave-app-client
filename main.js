@@ -1,14 +1,16 @@
 const record = document.getElementById("record");
 const transcribeBtn = document.getElementById("transcribe-btn");
 const spinner = document.getElementById("spinner");
+const audio = document.getElementById("audio");
 
+let can_record = false;
 let isRecording = false;
 let recorder = false;
 
 let chunks = [];
 
 function setupAudio() {
-  console.log("setupAudio");
+  console.log("setupAudio...");
   if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
     navigator.mediaDevices
       .getUserMedia({ audio: true })
@@ -26,16 +28,24 @@ function SetupStream(stream) {
   };
 
   recorder.onstop = () => {
-    const audioBlob = new Blob(chunks, { type: "audio/mp3" });
+    //const audioBlob = new Blob(chunks, { type: "audio/mp3" }); - not working when downloaded to local
+    const audioBlob = new File(
+      chunks,
+      `my-file.${recorder.mimeType.match(/\/([\w\d]+);?/)[1]}`,
+      { type: recorder.mimeType }
+    );
     const audioUrl = URL.createObjectURL(audioBlob);
-    const audio = document.createElement("audio");
     audio.src = audioUrl;
-    audio.play();
+    //audio.play();
   };
+  can_record = true;
 }
+
+setupAudio();
 
 function startRecording() {
   isRecording = true;
+  recorder.start();
   console.log("recording has started....");
   record.classList.replace("fa-microphone", "fa-stop-circle");
   transcribeBtn.classList.add("button-disabled");
@@ -45,6 +55,7 @@ function startRecording() {
 
 function stopRecording() {
   isRecording = false;
+  recorder.stop();
   console.log("recording has stopped.....");
   record.classList.replace("fa-stop-circle", "fa-microphone");
   transcribeBtn.classList.remove("button-disabled");
@@ -53,6 +64,7 @@ function stopRecording() {
 }
 
 function toggleRecording() {
+  if (!can_record) return;
   isRecording = !isRecording;
   if (isRecording) {
     startRecording();
@@ -62,5 +74,7 @@ function toggleRecording() {
 }
 
 record.addEventListener("click", toggleRecording);
-
-//setupAudio();
+//audio.addEventListener("click", toggleRecording);
+audio.addEventListener("ended", () => {
+  console.log("audio has ended");
+});
